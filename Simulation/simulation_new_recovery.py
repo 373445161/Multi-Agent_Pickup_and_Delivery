@@ -10,7 +10,7 @@ from Simulation.tasks_and_delays_maker import *
 
 
 class SimulationNewRecovery(object):
-    def __init__(self, tasks, agents, n_delays=0, delays=None):
+    def __init__(self, tasks, agents, n_delays=0, delays=None, communication_delay_manager=None):
         self.tasks = tasks
         self.agents = agents
         self.n_delays = n_delays
@@ -27,6 +27,10 @@ class SimulationNewRecovery(object):
         self.times_agent_delayed = defaultdict(lambda: 0)
         self.delays_now = 0
         self.algo_time = 0
+        self.communication_delay_manager = communication_delay_manager
+        self.communication_delay_steps = (
+            communication_delay_manager.communication_delay_steps if communication_delay_manager else 0
+        )
         self.initialize_simulation()
 
     def initialize_simulation(self):
@@ -34,6 +38,8 @@ class SimulationNewRecovery(object):
             self.start_times.append(t['start_time'])
         for agent in self.agents:
             self.actual_paths[agent['name']] = [{'t': 0, 'x': agent['start'][0], 'y': agent['start'][1]}]
+        if self.communication_delay_manager is not None:
+            self.communication_delay_manager.record_positions(0, self.get_current_positions())
         if self.delays is None:
             max_t = max(self.start_times)
             self.delay_times = random.choices(range(1, max_t + 10), k=self.n_delays)
@@ -98,8 +104,14 @@ class SimulationNewRecovery(object):
                     if len(algorithm.get_token()['agents'][agent['name']]) > 1:
                         x_new = algorithm.get_token()['agents'][agent['name']][1][0]
                         y_new = algorithm.get_token()['agents'][agent['name']][1][1]
-                        if tuple([x_new, y_new]) not in self.agents_pos_now or \
-                                tuple([x_new, y_new]) == tuple(tuple([current_agent_pos['x'], current_agent_pos['y']])):
+                        reported_positions = self.get_reported_positions()
+                        reported_occupied = set(reported_positions.values())
+                        current_pos_tuple = tuple([current_agent_pos['x'], current_agent_pos['y']])
+                        target_pos_tuple = tuple([x_new, y_new])
+                        communication_blocked = self.communication_delay_steps > 0 and \
+                            target_pos_tuple in reported_occupied and target_pos_tuple != current_pos_tuple
+                        if (target_pos_tuple not in self.agents_pos_now or target_pos_tuple == current_pos_tuple) \
+                                and not communication_blocked:
                             self.agents_moved.add(agent['name'])
                             self.agents_pos_now.remove(tuple([current_agent_pos['x'], current_agent_pos['y']]))
                             self.agents_pos_now.add(tuple([x_new, y_new]))
@@ -116,6 +128,26 @@ class SimulationNewRecovery(object):
                 self.agents_pos_now.add(tuple([current_agent_pos['x'], current_agent_pos['y']]))
                 self.actual_paths[agent['name']].append(
                     {'t': self.time, 'x': current_agent_pos['x'], 'y': current_agent_pos['y']})
+        if self.communication_delay_manager is not None:
+            self.communication_delay_manager.record_positions(self.time, self.get_current_positions())
+
+    def get_current_positions(self):
+        return {
+            name: (path[-1]['x'], path[-1]['y'])
+            for name, path in self.actual_paths.items()
+            if path
+        }
+
+    def get_reported_positions(self):
+        if self.communication_delay_manager is None:
+            return self.get_current_positions()
+        return self.communication_delay_manager.get_reported_positions(self.time)
+
+    def get_reported_agent_position(self, agent_name):
+        if self.communication_delay_manager is None:
+            current = self.actual_paths[agent_name][-1]
+            return current['x'], current['y']
+        return self.communication_delay_manager.get_reported_position(agent_name, self.time)
 
     def get_time(self):
         return self.time
