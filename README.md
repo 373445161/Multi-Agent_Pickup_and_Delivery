@@ -63,6 +63,25 @@ Run p-TP with p = 0.6, pd = 0.05 in a non-randomized environment:
 python3 demo.py -p 0.6 -pd 0.05 -not_rand
 ```
 
+
+
+## Task 2: Dynamic Obstacle Real-Time Avoidance
+The independent `Task2_Dynamic_Avoidance` module implements single-robot global A* planning, dynamic obstacle simulation, noisy obstacle observation, APF local avoidance, metrics, visualization, and batch experiments. Results are written under `Results_Task2/`.
+
+Run one demo:
+
+```
+python -m Task2_Dynamic_Avoidance.run_task2_demo
+```
+
+Run batch experiments over obstacle count, sensor noise, and obstacle speed:
+
+```
+python -m Task2_Dynamic_Avoidance.run_task2_batch_experiments
+```
+
+Use `--no-animation` on the demo command for a faster metrics-only run.
+
 ## Run Multiple Experiments
 To run multiple experiments and collect all the statistics, a specific script, `run_all_experiments_new.py`, can be used. This script contains a list of experiments (easy to modify and extend) that will be run exploiting multi-threading; after all the experiments terminate a json file with the results will be saved in the <i>Experiments</i> folder. The script can be run with the following command:
 
