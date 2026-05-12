@@ -63,6 +63,25 @@ Run p-TP with p = 0.6, pd = 0.05 in a non-randomized environment:
 python3 demo.py -p 0.6 -pd 0.05 -not_rand
 ```
 
+
+
+## Task 2: Dynamic Obstacle Real-Time Avoidance
+The independent `Task2_Dynamic_Avoidance` module implements single-robot global A* planning, dynamic obstacle simulation, noisy obstacle observation, APF local avoidance, metrics, visualization, and batch experiments. Results are written under `Results_Task2/`.
+
+Run one demo:
+
+```
+python -m Task2_Dynamic_Avoidance.run_task2_demo
+```
+
+Run batch experiments over obstacle count, sensor noise, and obstacle speed:
+
+```
+python -m Task2_Dynamic_Avoidance.run_task2_batch_experiments
+```
+
+Use `--no-animation` on the demo command for a faster metrics-only run.
+
 ## Run Multiple Experiments
 To run multiple experiments and collect all the statistics, a specific script, `run_all_experiments_new.py`, can be used. This script contains a list of experiments (easy to modify and extend) that will be run exploiting multi-threading; after all the experiments terminate a json file with the results will be saved in the <i>Experiments</i> folder. The script can be run with the following command:
 
@@ -77,3 +96,27 @@ python3 -m Utils.plot_experiments
 
 When a plot is closed, the next one will appear until the end of the experiments.
 
+
+## Task 3: 智慧园区无人车集群调度与通信延迟实验
+
+`Task3_Collaborative_Planning/` 将原 warehouse 二维网格场景包装为“智慧园区无人车配送场景”：`agents` 表示无人配送车，任务 `start` 表示物流取货点，任务 `goal` 表示配送点或巡检点。模块继续复用原项目的 `TokenPassingRecovery` 多机任务分配、CBS/A* 低层规划、`SimulationNewRecovery` 时间步仿真和 `Utils/Visualization/visualize.py` 动画工具。
+
+单次 demo：
+
+```bash
+python -m Task3_Collaborative_Planning.run_task3_demo --comm-delay 2 --n-agents 4 --n-tasks 20 --seed 42 --slow-factor 2
+```
+
+快速无动画运行：
+
+```bash
+python -m Task3_Collaborative_Planning.run_task3_demo --comm-delay 2 --n-agents 4 --n-tasks 20 --seed 42 --no-animation
+```
+
+批量实验：
+
+```bash
+python -m Task3_Collaborative_Planning.run_task3_delay_experiments
+```
+
+默认批量实验使用 `N_AGENTS=4`、`N_TASKS=20`、`SEEDS=0..9`、`COMM_DELAYS=[0,1,2,3,5]`，并将结果保存到 `Results_Task3/task3_comm_delay_results.csv`。同时自动生成通信延迟与 makespan、replans、total cost、waiting steps、throughput 的对比图，以及 `table_comm_delay_summary.csv` / `table_comm_delay_summary.md` 报告表格。
